@@ -19,6 +19,16 @@ defined( 'ABSPATH' ) || exit;
 class Caller {
 
 	/**
+	 * Plugins die andermans mail of verzoeken doorgeven. Die zijn zelden het
+	 * antwoord op "wie deed dit"; je wilt de plugin erachter zien.
+	 */
+	const PASS_THROUGH = array(
+		'gravitysmtp', 'gravity-smtp', 'wp-mail-smtp', 'post-smtp', 'easy-wp-smtp',
+		'fluent-smtp', 'wp-ses', 'mailgun', 'sendgrid-email-delivery-simplified',
+		'sparkpost', 'smtp-mailer', 'wp-smtp',
+	);
+
+	/**
 	 * Naam van de plugin per map, om herhaald inlezen te voorkomen.
 	 *
 	 * @var array
@@ -67,6 +77,10 @@ class Caller {
 
 			$slug = self::relative_slug( $file, $plugin_dir );
 			if ( $slug ) {
+				if ( in_array( $slug, self::PASS_THROUGH, true ) ) {
+					continue;
+				}
+
 				return $slug;
 			}
 

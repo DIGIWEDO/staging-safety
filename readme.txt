@@ -86,6 +86,10 @@ dat de mail is tegengehouden.
 * Waarschuwingen over risicoplugins zijn niet meer weg te klikken.
 * De repository voor updates staat vast in de plugin en is uit de instellingen
   gehaald.
+* Eén mail leverde soms meerdere logregels op, doordat SMTP-plugins hem vaker
+  langs WordPress halen. Wordt nu één regel.
+* Bij de aanroeper staat nu de plugin die de mail werkelijk stuurde, in plaats
+  van de SMTP-plugin die hem doorgaf.
 
 = 1.0.0 =
 * Bevestigen dat een site staging is kan nu met een knop, vastgezet op het

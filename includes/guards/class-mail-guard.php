@@ -25,6 +25,16 @@ defined( 'ABSPATH' ) || exit;
 class Mail_Guard extends Guard {
 
 	/**
+	 * Al gelogde mails binnen dit request.
+	 *
+	 * SMTP-plugins halen een mail geregeld meer dan eens langs de wp_mail-
+	 * filter. Er gaat er dan één de deur uit, maar wij zouden er drie loggen.
+	 *
+	 * @var array
+	 */
+	private $logged = array();
+
+	/**
 	 * Logkanaal.
 	 *
 	 * @return string
@@ -266,6 +276,14 @@ class Mail_Guard extends Guard {
 	private function log( $action, array $plan, $atts ) {
 		$original = Matcher::extract_recipients( isset( $atts['to'] ) ? $atts['to'] : array() );
 		$subject  = isset( $atts['subject'] ) ? (string) $atts['subject'] : '';
+
+		$fingerprint = md5( $action . '|' . implode( ',', $original ) . '|' . $subject . '|' . md5( (string) ( $atts['message'] ?? '' ) ) );
+
+		if ( isset( $this->logged[ $fingerprint ] ) ) {
+			return;
+		}
+
+		$this->logged[ $fingerprint ] = true;
 
 		$detail = sprintf(
 			/* translators: 1: onderwerp, 2: ontvangers */
