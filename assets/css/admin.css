@@ -1,0 +1,279 @@
+/* Staging Safety — beheerschermen */
+
+.staging-safety h2 {
+	margin-top: 28px;
+}
+
+.staging-safety .ss-muted {
+	color: #646970;
+}
+
+/* Statuskaart */
+.ss-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-left-width: 4px;
+	border-radius: 4px;
+	padding: 16px 20px;
+	margin: 16px 0 24px;
+	max-width: 900px;
+}
+
+.ss-card-ok {
+	border-left-color: #00a32a;
+}
+
+.ss-card-warn {
+	border-left-color: #dba617;
+}
+
+.ss-card-off {
+	border-left-color: #8c8f94;
+}
+
+.ss-card-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.ss-card-head h2 {
+	margin: 0;
+	font-size: 16px;
+}
+
+.ss-badge {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: #fff;
+	background: #8c8f94;
+}
+
+.ss-badge-ok {
+	background: #00a32a;
+}
+
+.ss-badge-warn {
+	background: #dba617;
+	color: #1d2327;
+}
+
+.ss-modes {
+	margin: 12px 0;
+	border-collapse: collapse;
+}
+
+.ss-modes th {
+	text-align: left;
+	padding: 4px 16px 4px 0;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.ss-modes td {
+	padding: 4px 16px 4px 0;
+}
+
+/* Labeltjes */
+.ss-pill {
+	display: inline-block;
+	padding: 1px 9px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 18px;
+	white-space: nowrap;
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.ss-pill-block,
+.ss-pill-blocked {
+	background: #fcf0f1;
+	color: #8a2424;
+	box-shadow: inset 0 0 0 1px #f0c4c6;
+}
+
+.ss-pill-monitor,
+.ss-pill-would_block {
+	background: #fcf9e8;
+	color: #7a5c00;
+	box-shadow: inset 0 0 0 1px #f0e3ae;
+}
+
+.ss-pill-redirected {
+	background: #f0f6fc;
+	color: #1a4a72;
+	box-shadow: inset 0 0 0 1px #bcd8ef;
+}
+
+.ss-pill-allowed {
+	background: #edfaef;
+	color: #145c25;
+	box-shadow: inset 0 0 0 1px #b8e0c1;
+}
+
+.ss-tag {
+	display: inline-block;
+	padding: 1px 7px;
+	border-radius: 3px;
+	font-size: 11px;
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.ss-tag-warn {
+	background: #fcf9e8;
+	color: #7a5c00;
+}
+
+/* Tellers */
+.ss-tiles {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin: 12px 0;
+}
+
+.ss-tile {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-top: 3px solid #8c8f94;
+	border-radius: 4px;
+	padding: 14px 20px;
+	min-width: 150px;
+}
+
+.ss-tile-block {
+	border-top-color: #d63638;
+}
+
+.ss-tile-monitor {
+	border-top-color: #dba617;
+}
+
+.ss-tile-ok {
+	border-top-color: #00a32a;
+}
+
+.ss-tile-value {
+	display: block;
+	font-size: 26px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.ss-tile-label {
+	display: block;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Waarschuwingen */
+.ss-warnings {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	gap: 12px;
+	max-width: 1100px;
+}
+
+.ss-warning {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-left: 4px solid #dba617;
+	border-radius: 4px;
+	padding: 12px 16px;
+}
+
+.ss-warning-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ss-warning p {
+	margin: 6px 0 0;
+	color: #50575e;
+}
+
+.ss-dismiss {
+	margin-left: auto;
+	text-decoration: none;
+	color: #8c8f94;
+	font-size: 18px;
+	line-height: 1;
+}
+
+.ss-dismiss:hover {
+	color: #d63638;
+}
+
+/* Toelichting */
+.ss-note {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 12px 20px;
+	max-width: 900px;
+}
+
+.ss-note ol {
+	margin: 8px 0 8px 20px;
+}
+
+/* Instellingen */
+.ss-mode-option {
+	display: block;
+	margin-bottom: 8px;
+	max-width: 640px;
+}
+
+.ss-mode-name {
+	font-weight: 600;
+}
+
+.ss-mode-desc {
+	display: block;
+	margin-left: 24px;
+	color: #646970;
+	font-size: 13px;
+}
+
+.ss-plugin-rules {
+	max-width: 760px;
+	max-height: 420px;
+	overflow-y: auto;
+	border: 1px solid #dcdcde;
+}
+
+.ss-plugin-rules th,
+.ss-plugin-rules td {
+	vertical-align: middle;
+}
+
+.ss-cron .check-column {
+	width: 32px;
+	padding-left: 10px;
+}
+
+.ss-cron tr.ss-risky code {
+	font-weight: 600;
+}
+
+.ss-orphans {
+	margin-left: 4px;
+}
+
+.ss-inline-form {
+	display: inline;
+}
+
+.ss-top code {
+	font-size: 12px;
+}
