@@ -65,13 +65,11 @@ class Settings {
 			),
 			'updates'            => array(
 				'enabled' => true,
-				'repo'    => '',
 			),
 			'log'                => array(
 				'enabled'        => true,
 				'retention_days' => 30,
 			),
-			'dismissed_warnings' => array(),
 		);
 	}
 

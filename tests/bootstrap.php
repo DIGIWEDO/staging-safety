@@ -63,6 +63,7 @@ class WP_Error {
 
 define( 'STAGING_SAFETY_DIR', dirname( __DIR__ ) . '/' );
 define( 'STAGING_SAFETY_VERSION', 'test' );
+define( 'STAGING_SAFETY_GITHUB_REPO', 'DIGIWEDO/staging-safety' );
 define( 'STAGING_SAFETY_FILE', STAGING_SAFETY_DIR . 'staging-safety.php' );
 
 $base = dirname( __DIR__ );

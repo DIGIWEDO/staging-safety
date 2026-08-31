@@ -13,6 +13,9 @@ defined( 'ABSPATH' ) || exit;
  * Een lijst met plugins waarvan we weten dat ze naar buiten praten, met per
  * plugin één concreet advies. Bewust niet automatisch ingrijpen: sommige van
  * deze plugins hebben een eigen testmodus die beter werkt dan alles blokkeren.
+ *
+ * De waarschuwingen zijn bewust niet weg te klikken. Ze beschrijven wat er op
+ * deze site kán misgaan, en dat blijft waar zolang de plugin actief is.
  */
 class Risk_Scanner {
 
@@ -149,11 +152,10 @@ class Risk_Scanner {
 	/**
 	 * Welke risicoplugins staan er aan?
 	 *
-	 * @return array Slug => gegevens, aangevuld met 'dismissed'.
+	 * @return array Slug => gegevens.
 	 */
 	public static function detect() {
 		$catalogue = self::catalogue();
-		$dismissed = (array) Settings::get( 'dismissed_warnings', array() );
 		$found     = array();
 
 		foreach ( self::active_slugs() as $slug ) {
@@ -161,9 +163,8 @@ class Risk_Scanner {
 				continue;
 			}
 
-			$entry              = $catalogue[ $slug ];
-			$entry['slug']      = $slug;
-			$entry['dismissed'] = in_array( $slug, $dismissed, true );
+			$entry         = $catalogue[ $slug ];
+			$entry['slug'] = $slug;
 
 			$found[ $slug ] = $entry;
 		}
@@ -174,20 +175,6 @@ class Risk_Scanner {
 		 * @param array $found Gevonden plugins.
 		 */
 		return apply_filters( 'staging_safety_risky_plugins', $found );
-	}
-
-	/**
-	 * Alleen de waarschuwingen die nog niet weggeklikt zijn.
-	 *
-	 * @return array
-	 */
-	public static function open_warnings() {
-		return array_filter(
-			self::detect(),
-			static function ( $entry ) {
-				return empty( $entry['dismissed'] );
-			}
-		);
 	}
 
 	/**
@@ -215,24 +202,4 @@ class Risk_Scanner {
 		return array_values( array_unique( $slugs ) );
 	}
 
-	/**
-	 * Een waarschuwing wegklikken.
-	 *
-	 * @param string $slug Mapnaam.
-	 */
-	public static function dismiss( $slug ) {
-		$dismissed = (array) Settings::get( 'dismissed_warnings', array() );
-
-		if ( ! in_array( $slug, $dismissed, true ) ) {
-			$dismissed[] = $slug;
-			Settings::set( 'dismissed_warnings', array_values( $dismissed ) );
-		}
-	}
-
-	/**
-	 * Alle waarschuwingen weer laten zien.
-	 */
-	public static function reset_dismissed() {
-		Settings::set( 'dismissed_warnings', array() );
-	}
 }

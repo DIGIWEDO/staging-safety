@@ -10,7 +10,6 @@ namespace StagingSafety\Admin;
 use StagingSafety\Environment;
 use StagingSafety\Logger;
 use StagingSafety\Plugin;
-use StagingSafety\Risk_Scanner;
 use StagingSafety\Settings;
 
 defined( 'ABSPATH' ) || exit;
@@ -29,6 +28,7 @@ class Admin {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_init', array( $this, 'handle_forms' ) );
 		add_action( 'admin_notices', array( $this, 'notices' ) );
+		add_action( 'in_admin_header', array( $this, 'silence_other_notices' ), 1000 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( STAGING_SAFETY_FILE ), array( $this, 'action_links' ) );
 	}
@@ -80,6 +80,35 @@ class Admin {
 			self::SLUG . '-log',
 			array( $this, 'render_log' )
 		);
+	}
+
+	/**
+	 * Zitten we op een scherm van deze plugin?
+	 *
+	 * @return bool
+	 */
+	private function is_plugin_page() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+		return 0 === strpos( $page, self::SLUG );
+	}
+
+	/**
+	 * Reclame en meldingen van andere plugins weghalen, maar alleen op onze
+	 * eigen schermen. Hier moet je kunnen zien wat de site naar buiten doet
+	 * zonder dat er een proefabonnement overheen staat.
+	 */
+	public function silence_other_notices() {
+		if ( ! $this->is_plugin_page() ) {
+			return;
+		}
+
+		remove_all_actions( 'admin_notices' );
+		remove_all_actions( 'all_admin_notices' );
+		remove_all_actions( 'user_admin_notices' );
+
+		add_action( 'admin_notices', array( $this, 'notices' ) );
 	}
 
 	/**
@@ -183,10 +212,6 @@ class Admin {
 				$this->redirect( self::SLUG . '-log', 'cleared' );
 				break;
 
-			case 'reset_warnings':
-				Risk_Scanner::reset_dismissed();
-				$this->redirect( self::SLUG, 'warnings-reset' );
-				break;
 		}
 	}
 
@@ -199,17 +224,6 @@ class Admin {
 		}
 
 		$action = sanitize_key( wp_unslash( $_GET['ss_action'] ) );
-
-		if ( 'dismiss_warning' === $action ) {
-			check_admin_referer( 'staging_safety_dismiss' );
-			$slug = isset( $_GET['slug'] ) ? sanitize_key( wp_unslash( $_GET['slug'] ) ) : '';
-
-			if ( $slug ) {
-				Risk_Scanner::dismiss( $slug );
-			}
-
-			$this->redirect( self::SLUG, 'dismissed' );
-		}
 
 		if ( 'confirm_staging' === $action || 'revoke_staging' === $action ) {
 			check_admin_referer( 'staging_safety_env' );
@@ -384,10 +398,7 @@ class Admin {
 
 				Settings::set_group(
 					'updates',
-					array(
-						'enabled' => ! empty( $input['updates']['enabled'] ),
-						'repo'    => sanitize_text_field( $input['updates']['repo'] ?? '' ),
-					)
+					array( 'enabled' => ! empty( $input['updates']['enabled'] ) )
 				);
 
 				Settings::set_group(
@@ -574,8 +585,6 @@ class Admin {
 			'confirmed'      => __( 'Bevestigd: deze site geldt vanaf nu als staging.', 'staging-safety' ),
 			'revoked'        => __( 'Bevestiging ingetrokken. De plugin blokkeert niets meer.', 'staging-safety' ),
 			'cleared'        => __( 'Logboek geleegd.', 'staging-safety' ),
-			'dismissed'      => __( 'Waarschuwing weggeklikt.', 'staging-safety' ),
-			'warnings-reset' => __( 'Alle waarschuwingen staan weer aan.', 'staging-safety' ),
 			'host-allowed'   => __( 'Host op de witte lijst gezet.', 'staging-safety' ),
 			'update-checked' => __( 'Opnieuw bij GitHub gekeken.', 'staging-safety' ),
 		);

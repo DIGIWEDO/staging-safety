@@ -53,23 +53,29 @@ class Updater {
 	}
 
 	/**
-	 * De repository, als "eigenaar/naam". Een constant wint van de instelling,
-	 * zodat je hem op een server kunt vastzetten.
+	 * De repository, als "eigenaar/naam". Staat vast in de pluginheader, dus
+	 * hier valt niets in te stellen.
 	 *
 	 * @return string
 	 */
 	public function repo() {
-		$repo = defined( 'STAGING_SAFETY_GITHUB_REPO' )
-			? (string) constant( 'STAGING_SAFETY_GITHUB_REPO' )
-			: (string) Settings::get( 'updates.repo', '' );
-
-		$repo = trim( $repo, " \t\n\r/" );
-
 		if ( ! Settings::get( 'updates.enabled', true ) ) {
 			return '';
 		}
 
-		// Iemand plakt makkelijk de hele URL; die knippen we terug.
+		return self::normalise_repo( defined( 'STAGING_SAFETY_GITHUB_REPO' ) ? (string) constant( 'STAGING_SAFETY_GITHUB_REPO' ) : '' );
+	}
+
+	/**
+	 * "eigenaar/naam" eruit halen. Een hele GitHub-URL mag ook, want die plak
+	 * je nu eenmaal makkelijker over dan het pad alleen.
+	 *
+	 * @param string $value Ruwe waarde.
+	 * @return string Leeg als het geen geldige repository is.
+	 */
+	public static function normalise_repo( $value ) {
+		$repo = trim( (string) $value, " \t\n\r/" );
+
 		if ( false !== strpos( $repo, 'github.com' ) ) {
 			$path = (string) wp_parse_url( $repo, PHP_URL_PATH );
 			$repo = trim( $path, '/' );

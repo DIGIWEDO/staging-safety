@@ -177,27 +177,23 @@ ok( 'onschuldige hook', Cron_Guard::is_risky( 'wp_scheduled_delete' ), false );
 /* ---------- Updater ---------- */
 $u = new StagingSafety\Updater();
 
-function set_updates( $repo, $enabled = true ) {
+function set_updates( $unused = '', $enabled = true ) {
 	Settings::flush();
 	$GLOBALS['ss_options'][ Settings::OPTION ] = array(
-		'updates' => array( 'enabled' => $enabled, 'repo' => $repo ),
+		'updates' => array( 'enabled' => $enabled ),
 	);
 }
 
-set_updates( 'doubleweb/staging-safety' );
-ok( 'repo eenvoudig', $u->repo(), 'doubleweb/staging-safety' );
+set_updates( '' );
+ok( 'repo komt uit de plugin', $u->repo(), 'DIGIWEDO/staging-safety' );
 
-set_updates( 'https://github.com/doubleweb/staging-safety' );
-ok( 'hele url geplakt', $u->repo(), 'doubleweb/staging-safety' );
-
-set_updates( 'https://github.com/doubleweb/staging-safety.git' );
-ok( 'url met .git', $u->repo(), 'doubleweb/staging-safety' );
-
-set_updates( 'zomaar wat' );
-ok( 'onzin geeft niets', $u->repo(), '' );
-
-set_updates( 'doubleweb/staging-safety', false );
+set_updates( '', false );
 ok( 'uitgezet geeft niets', $u->repo(), '' );
+
+ok( 'eenvoudige notatie', StagingSafety\Updater::normalise_repo( 'doubleweb/staging-safety' ), 'doubleweb/staging-safety' );
+ok( 'hele url geplakt', StagingSafety\Updater::normalise_repo( 'https://github.com/doubleweb/staging-safety' ), 'doubleweb/staging-safety' );
+ok( 'url met .git', StagingSafety\Updater::normalise_repo( 'https://github.com/doubleweb/staging-safety.git' ), 'doubleweb/staging-safety' );
+ok( 'onzin geeft niets', StagingSafety\Updater::normalise_repo( 'zomaar wat' ), '' );
 
 ok( 'tag met v', $u->normalise_version( 'v0.2.0' ), '0.2.0' );
 ok( 'tag zonder v', $u->normalise_version( '1.4.2' ), '1.4.2' );

@@ -9,7 +9,7 @@
  * Author:            Intern
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Update URI:        https://github.com/
+ * Update URI:        https://github.com/DIGIWEDO/staging-safety
  * Text Domain:       staging-safety
  *
  * @package StagingSafety
@@ -21,6 +21,12 @@ define( 'STAGING_SAFETY_VERSION', '1.0.1' );
 define( 'STAGING_SAFETY_FILE', __FILE__ );
 define( 'STAGING_SAFETY_DIR', plugin_dir_path( __FILE__ ) );
 define( 'STAGING_SAFETY_URL', plugin_dir_url( __FILE__ ) );
+
+// Waar de updates vandaan komen. Kan per server overschreven worden door de
+// constant vóór het laden van de plugin te zetten, maar dat is zelden nodig.
+if ( ! defined( 'STAGING_SAFETY_GITHUB_REPO' ) ) {
+	define( 'STAGING_SAFETY_GITHUB_REPO', 'DIGIWEDO/staging-safety' );
+}
 
 /**
  * Autoloader. StagingSafety\Guards\Http_Guard => includes/guards/class-http-guard.php

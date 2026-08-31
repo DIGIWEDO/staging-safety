@@ -81,6 +81,11 @@ dat de mail is tegengehouden.
 = 1.0.1 =
 * Melding over het ontbrekende testadres zei ten onrechte dat mail al
   tegengehouden werd, ook als mail nog op meekijken stond.
+* Meldingen en reclame van andere plugins worden op de schermen van Staging
+  Safety niet meer getoond.
+* Waarschuwingen over risicoplugins zijn niet meer weg te klikken.
+* De repository voor updates staat vast in de plugin en is uit de instellingen
+  gehaald.
 
 = 1.0.0 =
 * Bevestigen dat een site staging is kan nu met een knop, vastgezet op het

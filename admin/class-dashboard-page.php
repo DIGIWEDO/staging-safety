@@ -238,10 +238,12 @@ class Dashboard_Page {
 	}
 
 	/**
-	 * Waarschuwingen over risicoplugins.
+	 * Waarschuwingen over risicoplugins. Niet weg te klikken: ze beschrijven
+	 * wat er op deze site kan misgaan, en dat verandert niet doordat je het
+	 * een keer gelezen hebt.
 	 */
 	private function warnings() {
-		$warnings = Risk_Scanner::open_warnings();
+		$warnings = Risk_Scanner::detect();
 
 		?>
 		<h2><?php esc_html_e( 'Risicoplugins', 'staging-safety' ); ?></h2>
@@ -249,12 +251,7 @@ class Dashboard_Page {
 
 		if ( ! $warnings ) {
 			?>
-			<p class="ss-muted"><?php esc_html_e( 'Geen bekende risicoplugins actief, of alle waarschuwingen zijn weggeklikt.', 'staging-safety' ); ?></p>
-			<form method="post">
-				<?php wp_nonce_field( 'staging_safety_reset_warnings' ); ?>
-				<input type="hidden" name="staging_safety_action" value="reset_warnings">
-				<button type="submit" class="button button-small"><?php esc_html_e( 'Weggeklikte waarschuwingen weer tonen', 'staging-safety' ); ?></button>
-			</form>
+			<p class="ss-muted"><?php esc_html_e( 'Geen bekende risicoplugins actief.', 'staging-safety' ); ?></p>
 			<?php
 
 			return;
@@ -262,38 +259,17 @@ class Dashboard_Page {
 
 		?>
 		<div class="ss-warnings">
-			<?php foreach ( $warnings as $slug => $warning ) : ?>
+			<?php foreach ( $warnings as $warning ) : ?>
 				<div class="ss-warning">
 					<div class="ss-warning-head">
 						<strong><?php echo esc_html( $warning['name'] ); ?></strong>
 						<span class="ss-tag"><?php echo esc_html( $warning['category'] ); ?></span>
-						<a class="ss-dismiss" href="<?php echo esc_url( $this->dismiss_url( $slug ) ); ?>" title="<?php esc_attr_e( 'Wegklikken', 'staging-safety' ); ?>">&times;</a>
 					</div>
 					<p><?php echo esc_html( $warning['advice'] ); ?></p>
 				</div>
 			<?php endforeach; ?>
 		</div>
 		<?php
-	}
-
-	/**
-	 * Link om een waarschuwing weg te klikken.
-	 *
-	 * @param string $slug Mapnaam.
-	 * @return string
-	 */
-	private function dismiss_url( $slug ) {
-		return wp_nonce_url(
-			add_query_arg(
-				array(
-					'page'      => 'staging-safety',
-					'ss_action' => 'dismiss_warning',
-					'slug'      => $slug,
-				),
-				admin_url( 'admin.php' )
-			),
-			'staging_safety_dismiss'
-		);
 	}
 
 	/**

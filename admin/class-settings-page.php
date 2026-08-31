@@ -583,21 +583,17 @@ class Settings_Page {
 						<input type="checkbox" name="ss[updates][enabled]" value="1" <?php checked( ! empty( $updates['enabled'] ) ); ?>>
 						<?php esc_html_e( 'Meldingen tonen als er een nieuwe versie is', 'staging-safety' ); ?>
 					</label>
-					<p class="description"><?php esc_html_e( 'De update verschijnt dan gewoon op de pluginpagina, net als bij elke andere plugin.', 'staging-safety' ); ?></p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="ss-repo"><?php esc_html_e( 'Repository', 'staging-safety' ); ?></label></th>
-				<td>
-					<?php if ( defined( 'STAGING_SAFETY_GITHUB_REPO' ) ) : ?>
-						<p><code><?php echo esc_html( (string) constant( 'STAGING_SAFETY_GITHUB_REPO' ) ); ?></code></p>
-						<p class="description"><?php esc_html_e( 'Vastgezet in wp-config.php, dus hier niet aan te passen.', 'staging-safety' ); ?></p>
-					<?php else : ?>
-						<input type="text" id="ss-repo" name="ss[updates][repo]" class="regular-text code"
-							   placeholder="eigenaar/staging-safety"
-							   value="<?php echo esc_attr( $updates['repo'] ?? '' ); ?>">
-						<p class="description"><?php esc_html_e( 'Bijvoorbeeld doubleweb/staging-safety. De hele GitHub-URL plakken mag ook.', 'staging-safety' ); ?></p>
-					<?php endif; ?>
+					<p class="description">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s: repository */
+								__( 'De update verschijnt dan gewoon op de pluginpagina, net als bij elke andere plugin. Bron: %s.', 'staging-safety' ),
+								$repo ? $repo : __( 'niet ingesteld', 'staging-safety' )
+							)
+						);
+						?>
+					</p>
 				</td>
 			</tr>
 			<tr>
