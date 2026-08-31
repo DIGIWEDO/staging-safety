@@ -102,8 +102,8 @@ class Dashboard_Page {
 				<?php foreach ( Plugin::instance()->guards() as $name => $guard ) : ?>
 					<tr>
 						<th><?php echo esc_html( $this->guard_label( $name ) ); ?></th>
-						<td><?php $this->mode_pill( $guard->mode() ); ?></td>
-						<td class="ss-muted"><?php echo esc_html( $this->mode_explanation( $guard->mode() ) ); ?></td>
+						<td><?php $this->mode_pill( $guard ); ?></td>
+						<td class="ss-muted"><?php echo esc_html( $this->mode_explanation( $guard ) ); ?></td>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>
@@ -144,31 +144,68 @@ class Dashboard_Page {
 	}
 
 	/**
-	 * Gekleurd labeltje voor een stand.
+	 * Gekleurd labeltje met wat er werkelijk gebeurt. Staat een guard op
+	 * blokkeren terwijl de omgeving niet bevestigd is, dan blokkeert hij niets
+	 * — en dan mag er hier ook geen rood "blokkeert" staan.
 	 *
-	 * @param string $mode Stand.
+	 * @param \StagingSafety\Guards\Guard $guard Guard.
 	 */
-	private function mode_pill( $mode ) {
-		$labels = array(
-			'off'     => __( 'uit', 'staging-safety' ),
-			'monitor' => __( 'kijkt mee', 'staging-safety' ),
-			'block'   => __( 'blokkeert', 'staging-safety' ),
-		);
+	private function mode_pill( $guard ) {
+		$mode = $guard->mode();
+
+		if ( ! $guard->is_active() ) {
+			$state = 'off';
+			$label = 'off' === $mode ? __( 'uit', 'staging-safety' ) : __( 'slaapt', 'staging-safety' );
+		} elseif ( 'block' === $mode && Plugin::is_paused() ) {
+			$state = 'monitor';
+			$label = __( 'gepauzeerd', 'staging-safety' );
+		} else {
+			$labels = array(
+				'off'     => __( 'uit', 'staging-safety' ),
+				'monitor' => __( 'kijkt mee', 'staging-safety' ),
+				'block'   => __( 'blokkeert', 'staging-safety' ),
+			);
+
+			$state = $mode;
+			$label = isset( $labels[ $mode ] ) ? $labels[ $mode ] : $mode;
+		}
 
 		printf(
 			'<span class="ss-pill ss-pill-%1$s">%2$s</span>',
-			esc_attr( $mode ),
-			esc_html( isset( $labels[ $mode ] ) ? $labels[ $mode ] : $mode )
+			esc_attr( $state ),
+			esc_html( $label )
 		);
 	}
 
 	/**
-	 * Uitleg bij een stand.
+	 * Uitleg in gewone taal bij wat die guard nu doet.
 	 *
-	 * @param string $mode Stand.
+	 * @param \StagingSafety\Guards\Guard $guard Guard.
 	 * @return string
 	 */
-	private function mode_explanation( $mode ) {
+	private function mode_explanation( $guard ) {
+		$mode = $guard->mode();
+
+		if ( ! $guard->is_active() ) {
+			if ( 'off' === $mode ) {
+				return __( 'niets wordt bijgehouden', 'staging-safety' );
+			}
+
+			$word = 'block' === $mode
+				? __( 'blokkeren', 'staging-safety' )
+				: __( 'meekijken', 'staging-safety' );
+
+			return sprintf(
+				/* translators: %s: ingestelde stand */
+				__( 'staat op %s, maar doet niets zolang de omgeving niet bevestigd is', 'staging-safety' ),
+				$word
+			);
+		}
+
+		if ( 'block' === $mode && Plugin::is_paused() ) {
+			return __( 'tijdelijk gepauzeerd, alles gaat er nu gewoon doorheen', 'staging-safety' );
+		}
+
 		switch ( $mode ) {
 			case 'block':
 				return __( 'wordt tegengehouden en gelogd', 'staging-safety' );
