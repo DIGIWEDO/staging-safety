@@ -4,7 +4,7 @@ Tags: staging, veiligheid, http, e-mail, cron
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.0.1
+Stable tag: 1.0.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,7 +78,7 @@ dat de mail is tegengehouden.
 
 == Changelog ==
 
-= 1.0.1 =
+= 1.0.3 =
 * Melding over het ontbrekende testadres zei ten onrechte dat mail al
   tegengehouden werd, ook als mail nog op meekijken stond.
 * Meldingen en reclame van andere plugins worden op de schermen van Staging
@@ -90,6 +90,10 @@ dat de mail is tegengehouden.
   langs WordPress halen. Wordt nu één regel.
 * Bij de aanroeper staat nu de plugin die de mail werkelijk stuurde, in plaats
   van de SMTP-plugin die hem doorgaf.
+* Het downloaden van een update werd zelf tegengehouden zodra alle uitgaande
+  requests dichtstonden. Die download gaat er nu altijd langs.
+* Aanroepen naar de site zelf (wp-cron, admin-ajax, loopbacks) komen niet meer
+  in het logboek. Die vulden het logboek zonder iets te zeggen.
 
 = 1.0.0 =
 * Bevestigen dat een site staging is kan nu met een knop, vastgezet op het

@@ -32,6 +32,25 @@ class Updater {
 	const API_HOST    = 'api.github.com';
 
 	/**
+	 * Hosts waar het downloaden van een release langs komt. GitHub stuurt je
+	 * door naar een ander domein, en daar moet de download ook doorheen.
+	 */
+	const DOWNLOAD_HOSTS = array(
+		'api.github.com',
+		'codeload.github.com',
+		'github.com',
+		'objects.githubusercontent.com',
+		'release-assets.githubusercontent.com',
+	);
+
+	/**
+	 * Staat er nu een update van deze plugin te downloaden?
+	 *
+	 * @var bool
+	 */
+	private $downloading = false;
+
+	/**
 	 * Aanhaken. Alleen in de beheeromgeving en tijdens cron: op de voorkant
 	 * heeft niemand iets aan een updatecontrole.
 	 */
@@ -40,7 +59,8 @@ class Updater {
 			return;
 		}
 
-		add_filter( 'http_request_args', array( $this, 'add_token' ), 10, 2 );
+		add_filter( 'http_request_args', array( $this, 'prepare_request' ), 10, 2 );
+		add_filter( 'upgrader_pre_download', array( $this, 'start_download' ), 10, 4 );
 		add_filter( 'upgrader_source_selection', array( $this, 'fix_folder_name' ), 10, 4 );
 		add_action( 'upgrader_process_complete', array( $this, 'flush' ), 10, 0 );
 
@@ -105,10 +125,18 @@ class Updater {
 	 * @param string $url  Doel-URL.
 	 * @return array
 	 */
-	public function add_token( $args, $url ) {
+	public function prepare_request( $args, $url ) {
+		$host = Matcher::host_from_url( $url );
+
+		// Het downloaden van onze eigen update moet langs de guard kunnen,
+		// anders kun je de plugin niet meer bijwerken zodra alles dichtstaat.
+		if ( $this->downloading && in_array( $host, self::DOWNLOAD_HOSTS, true ) ) {
+			$args['staging_safety_internal'] = true;
+		}
+
 		$token = $this->token();
 
-		if ( '' === $token || self::API_HOST !== Matcher::host_from_url( $url ) ) {
+		if ( '' === $token || self::API_HOST !== $host ) {
 			return $args;
 		}
 
@@ -119,6 +147,24 @@ class Updater {
 		$args['headers']['Authorization'] = 'Bearer ' . $token;
 
 		return $args;
+	}
+
+	/**
+	 * WordPress gaat onze plugin downloaden. Vanaf hier mogen de aanroepen
+	 * naar GitHub erdoor, tot het uitpakken klaar is.
+	 *
+	 * @param mixed  $reply      Bestaand antwoord.
+	 * @param string $package    Doel-URL.
+	 * @param object $upgrader   Upgrader.
+	 * @param array  $hook_extra Wat er bijgewerkt wordt.
+	 * @return mixed
+	 */
+	public function start_download( $reply, $package, $upgrader = null, $hook_extra = array() ) {
+		if ( ! empty( $hook_extra['plugin'] ) && plugin_basename( STAGING_SAFETY_FILE ) === $hook_extra['plugin'] ) {
+			$this->downloading = true;
+		}
+
+		return $reply;
 	}
 
 	/**
@@ -336,6 +382,8 @@ class Updater {
 	public function fix_folder_name( $source, $remote_source, $upgrader = null, $args = array() ) {
 		global $wp_filesystem;
 
+		$this->downloading = false;
+
 		$basename = plugin_basename( STAGING_SAFETY_FILE );
 
 		if ( empty( $args['plugin'] ) || $args['plugin'] !== $basename ) {
@@ -363,6 +411,8 @@ class Updater {
 	 * Cache weggooien, zodat de volgende controle vers is.
 	 */
 	public function flush() {
+		$this->downloading = false;
+
 		delete_transient( self::CACHE_KEY );
 	}
 }

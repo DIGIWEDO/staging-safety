@@ -80,7 +80,11 @@ class Http_Guard extends Guard {
 		$decision = apply_filters( 'staging_safety_http_decision', $decision, $url, $host, $slug, $args );
 
 		if ( ! empty( $decision['allow'] ) ) {
-			if ( Settings::get( 'http.log_allowed' ) ) {
+			// Aanroepen naar de site zelf (wp-cron, admin-ajax, loopbacks) niet
+			// loggen. Dat zijn er honderden per dag en ze zeggen niets over wat
+			// er naar buiten gaat; ze verdrinken alleen de regels die er wel
+			// toe doen.
+			if ( Settings::get( 'http.log_allowed' ) && empty( $decision['internal'] ) ) {
 				$this->log( Logger::ACTION_ALLOWED, $host, $url, $decision['rule'], $slug, $args );
 			}
 
@@ -119,7 +123,7 @@ class Http_Guard extends Guard {
 	 */
 	public function decide( $host, $slug = '' ) {
 		if ( $this->is_internal( $host ) ) {
-			return $this->result( true, __( 'eigen omgeving', 'staging-safety' ) );
+			return $this->result( true, __( 'eigen omgeving', 'staging-safety' ), true );
 		}
 
 		$deny = Matcher::match_host( $host, (array) Settings::get( 'http.deny', array() ) );
@@ -155,14 +159,16 @@ class Http_Guard extends Guard {
 	/**
 	 * Hulpje voor een leesbaar resultaat.
 	 *
-	 * @param bool   $allow Toestaan?
-	 * @param string $rule  Welke regel greep.
+	 * @param bool   $allow    Toestaan?
+	 * @param string $rule     Welke regel greep.
+	 * @param bool   $internal Gaat dit naar de site zelf?
 	 * @return array
 	 */
-	private function result( $allow, $rule ) {
+	private function result( $allow, $rule, $internal = false ) {
 		return array(
-			'allow' => (bool) $allow,
-			'rule'  => $rule,
+			'allow'    => (bool) $allow,
+			'rule'     => $rule,
+			'internal' => (bool) $internal,
 		);
 	}
 
