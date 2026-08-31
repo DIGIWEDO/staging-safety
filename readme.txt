@@ -4,7 +4,7 @@ Tags: staging, veiligheid, http, e-mail, cron
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,10 @@ loopt een bestelling of formulier vast op een verzendfout. In het logboek zie je
 dat de mail is tegengehouden.
 
 == Changelog ==
+
+= 1.0.1 =
+* Melding over het ontbrekende testadres zei ten onrechte dat mail al
+  tegengehouden werd, ook als mail nog op meekijken stond.
 
 = 1.0.0 =
 * Bevestigen dat een site staging is kan nu met een knop, vastgezet op het

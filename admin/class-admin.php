@@ -544,11 +544,18 @@ class Admin {
 		}
 
 		if ( 'redirect' === Settings::get( 'mail.strategy' ) && ! Settings::get( 'mail.redirect_to' ) && 'off' !== Settings::get( 'mail.mode' ) ) {
+			// In de stand "kijkt mee" wordt er nog niets tegengehouden. Dat moet
+			// de melding ook zeggen, anders schrik je van iets wat niet gebeurt.
+			$blocking = 'block' === Settings::get( 'mail.mode' );
+
 			$this->notice(
 				'warning',
 				sprintf(
-					/* translators: %s: link naar de instellingen */
-					__( 'Mail moet omgeleid worden, maar er staat geen testadres ingesteld. Tot die tijd wordt alle mail tegengehouden. %s', 'staging-safety' ),
+					/* translators: 1: gevolg, 2: link naar de instellingen */
+					__( 'Mail moet omgeleid worden, maar er staat geen testadres ingesteld. %1$s %2$s', 'staging-safety' ),
+					$blocking
+						? esc_html__( 'Tot die tijd wordt alle mail tegengehouden.', 'staging-safety' )
+						: esc_html__( 'Nu nog niet erg, want mail staat op meekijken — maar zodra je op blokkeren zet gaat alle mail tegen de vlakte.', 'staging-safety' ),
 					'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::SLUG . '-settings&tab=mail' ) ) . '">' . esc_html__( 'Testadres invullen', 'staging-safety' ) . '</a>'
 				)
 			);
