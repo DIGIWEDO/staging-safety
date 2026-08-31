@@ -4,7 +4,7 @@ Tags: staging, veiligheid, http, e-mail, cron
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.2.0
+Stable tag: 1.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,7 +78,7 @@ dat de mail is tegengehouden.
 
 == Changelog ==
 
-= 0.2.0 =
+= 1.0.0 =
 * Bevestigen dat een site staging is kan nu met een knop, vastgezet op het
   domein. Landt de database op een ander domein, dan zet de plugin zichzelf uit.
 * Updates via GitHub Releases: nieuwe versies verschijnen gewoon op de
