@@ -163,6 +163,16 @@ class Admin {
 		check_admin_referer( 'staging_safety_' . $action );
 
 		switch ( $action ) {
+			case 'confirm_staging':
+				Environment::confirm();
+				$this->redirect( self::SLUG, 'confirmed' );
+				break;
+
+			case 'revoke_staging':
+				Environment::revoke();
+				$this->redirect( self::SLUG, 'revoked' );
+				break;
+
 			case 'save_settings':
 				$this->save_settings();
 				$this->redirect( self::SLUG . '-settings', 'saved', array( 'tab' => $this->current_tab() ) );
@@ -201,6 +211,27 @@ class Admin {
 			$this->redirect( self::SLUG, 'dismissed' );
 		}
 
+		if ( 'confirm_staging' === $action || 'revoke_staging' === $action ) {
+			check_admin_referer( 'staging_safety_env' );
+
+			if ( 'confirm_staging' === $action ) {
+				Environment::confirm();
+				$this->redirect( self::SLUG, 'confirmed' );
+			}
+
+			Environment::revoke();
+			$this->redirect( self::SLUG, 'revoked' );
+		}
+
+		if ( 'check_update' === $action ) {
+			check_admin_referer( 'staging_safety_check_update' );
+
+			( new \StagingSafety\Updater() )->release( true );
+			delete_site_transient( 'update_plugins' );
+
+			$this->redirect( self::SLUG . '-settings', 'update-checked', array( 'tab' => 'general' ) );
+		}
+
 		if ( 'allow_host' === $action ) {
 			check_admin_referer( 'staging_safety_allow_host' );
 			$host = isset( $_GET['host'] ) ? sanitize_text_field( wp_unslash( $_GET['host'] ) ) : '';
@@ -216,6 +247,44 @@ class Admin {
 
 			$this->redirect( self::SLUG . '-log', 'host-allowed' );
 		}
+	}
+
+	/**
+	 * Beveiligde link om de omgeving te bevestigen of in te trekken.
+	 *
+	 * @param string $action confirm_staging of revoke_staging.
+	 * @return string
+	 */
+	public static function env_url( $action ) {
+		return wp_nonce_url(
+			add_query_arg(
+				array(
+					'page'      => self::SLUG,
+					'ss_action' => $action,
+				),
+				admin_url( 'admin.php' )
+			),
+			'staging_safety_env'
+		);
+	}
+
+	/**
+	 * Beveiligde link om nu bij GitHub te kijken.
+	 *
+	 * @return string
+	 */
+	public static function check_update_url() {
+		return wp_nonce_url(
+			add_query_arg(
+				array(
+					'page'      => self::SLUG . '-settings',
+					'tab'       => 'general',
+					'ss_action' => 'check_update',
+				),
+				admin_url( 'admin.php' )
+			),
+			'staging_safety_check_update'
+		);
 	}
 
 	/**
@@ -310,6 +379,14 @@ class Admin {
 						'color'    => $this->sanitize_color( $input['indicator']['color'] ?? '' ),
 						'frontend' => ! empty( $input['indicator']['frontend'] ),
 						'login'    => ! empty( $input['indicator']['login'] ),
+					)
+				);
+
+				Settings::set_group(
+					'updates',
+					array(
+						'enabled' => ! empty( $input['updates']['enabled'] ),
+						'repo'    => sanitize_text_field( $input['updates']['repo'] ?? '' ),
 					)
 				);
 
@@ -487,10 +564,13 @@ class Admin {
 
 		$messages = array(
 			'saved'          => __( 'Instellingen opgeslagen.', 'staging-safety' ),
+			'confirmed'      => __( 'Bevestigd: deze site geldt vanaf nu als staging.', 'staging-safety' ),
+			'revoked'        => __( 'Bevestiging ingetrokken. De plugin blokkeert niets meer.', 'staging-safety' ),
 			'cleared'        => __( 'Logboek geleegd.', 'staging-safety' ),
 			'dismissed'      => __( 'Waarschuwing weggeklikt.', 'staging-safety' ),
 			'warnings-reset' => __( 'Alle waarschuwingen staan weer aan.', 'staging-safety' ),
 			'host-allowed'   => __( 'Host op de witte lijst gezet.', 'staging-safety' ),
+			'update-checked' => __( 'Opnieuw bij GitHub gekeken.', 'staging-safety' ),
 		);
 
 		if ( isset( $messages[ $code ] ) ) {
@@ -499,33 +579,73 @@ class Admin {
 	}
 
 	/**
-	 * Uitleg als er niets in wp-config.php staat. Zolang die regel ontbreekt
-	 * doet de plugin niets, en dat is met opzet: het antwoord hoort in een
-	 * bestand dat niet meereist met een databasekopie.
+	 * De vraag of dit staging is. Zolang die niet beantwoord is doet de plugin
+	 * niets, en dat is met opzet.
 	 */
 	private function setup_notice() {
-		$hint = Environment::looks_like_staging()
-			? __( 'De hostnaam ziet er wel uit als een testomgeving.', 'staging-safety' )
-			: __( 'De hostnaam geeft geen uitsluitsel.', 'staging-safety' );
+		$stale = Environment::stale_confirmation();
 
 		?>
 		<div class="notice notice-warning staging-safety-notice">
-			<p>
-				<strong><?php esc_html_e( 'Staging Safety staat uit.', 'staging-safety' ); ?></strong>
-				<?php
-				echo esc_html(
-					sprintf(
-						/* translators: %s: toelichting op de hostnaam */
-						__( 'Er wordt niets geblokkeerd of gelogd. %s', 'staging-safety' ),
-						$hint
-					)
-				);
-			?>
-			</p>
-			<p><?php esc_html_e( 'Zet deze regel in wp-config.php van de stagingserver om hem aan te zetten:', 'staging-safety' ); ?></p>
-			<p><code>define( 'STAGING_SAFETY_ENV', 'staging' );</code></p>
+			<?php if ( $stale ) : ?>
+				<p>
+					<strong><?php esc_html_e( 'Staging Safety heeft zichzelf uitgezet.', 'staging-safety' ); ?></strong><br>
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: 1: domein van de bevestiging, 2: huidig domein */
+							__( 'Deze site was bevestigd als staging op %1$s, maar draait nu op %2$s. Deze database komt dus van een andere omgeving. Zolang dat niet klopt blokkeert de plugin niets.', 'staging-safety' ),
+							$stale,
+							Environment::current_host()
+						)
+					);
+					?>
+				</p>
+			<?php else : ?>
+				<p>
+					<strong><?php esc_html_e( 'Staging Safety staat nog uit.', 'staging-safety' ); ?></strong>
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %s: toelichting op de hostnaam */
+							__( 'Er wordt niets geblokkeerd of gelogd. %s', 'staging-safety' ),
+							Environment::looks_like_staging()
+								? __( 'De hostnaam ziet er wel uit als een testomgeving.', 'staging-safety' )
+								: __( 'De hostnaam geeft geen uitsluitsel.', 'staging-safety' )
+						)
+					);
+					?>
+				</p>
+			<?php endif; ?>
+
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>">
+				<?php wp_nonce_field( 'staging_safety_confirm_staging' ); ?>
+				<input type="hidden" name="staging_safety_action" value="confirm_staging">
+				<p>
+					<button type="submit" class="button button-primary">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s: domeinnaam */
+								__( 'Ja, %s is een stagingomgeving', 'staging-safety' ),
+								Environment::current_host()
+							)
+						);
+						?>
+					</button>
+				</p>
+			</form>
+
 			<p class="description">
-				<?php esc_html_e( 'Bewust in wp-config.php en niet in een instelling: zo komt hij niet mee als de klant de database naar productie kopieert, en verdwijnt hij niet als er een nieuwe kopie van productie wordt getrokken.', 'staging-safety' ); ?>
+				<?php esc_html_e( 'De bevestiging wordt vastgezet op dit domein. Komt deze database ooit op een ander domein terecht, dan zet de plugin zichzelf weer uit — zo kan een stagingdatabase nooit per ongeluk de live-site blokkeren.', 'staging-safety' ); ?>
+			</p>
+			<p class="description">
+				<?php
+				echo wp_kses(
+					__( 'Wil je dat het ook een verse databasekopie van productie overleeft, zet dan <code>define( \'STAGING_SAFETY_ENV\', \'staging\' );</code> in wp-config.php. Dat is niet nodig, wel steviger.', 'staging-safety' ),
+					array( 'code' => array() )
+				);
+				?>
 			</p>
 		</div>
 		<?php

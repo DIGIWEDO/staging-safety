@@ -32,6 +32,10 @@ class Settings {
 	 */
 	public static function defaults() {
 		return array(
+			// Het domein waarop iemand deze site als staging bevestigde. Leeg
+			// is "niet bevestigd". Zie Environment voor waarom hier een domein
+			// staat en geen simpele ja/nee.
+			'confirmed_staging'  => '',
 			'http'               => array(
 				'mode'         => 'monitor',
 				'policy'       => 'whitelist',
@@ -58,6 +62,10 @@ class Settings {
 				'color'    => '#d63638',
 				'frontend' => true,
 				'login'    => true,
+			),
+			'updates'            => array(
+				'enabled' => true,
+				'repo'    => '',
 			),
 			'log'                => array(
 				'enabled'        => true,

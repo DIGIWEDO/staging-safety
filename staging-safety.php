@@ -3,12 +3,13 @@
  * Plugin Name:       Staging Safety
  * Plugin URI:        https://example.internal/staging-safety
  * Description:       Extra veiligheidslaag voor stagingomgevingen. Blokkeert en logt uitgaande requests, e-mail en cronjobs, zodat een stagingkopie geen live systemen aanroept.
- * Version:           0.1.0
+ * Version:           0.2.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Intern
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Update URI:        https://github.com/
  * Text Domain:       staging-safety
  *
  * @package StagingSafety
@@ -16,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'STAGING_SAFETY_VERSION', '0.1.0' );
+define( 'STAGING_SAFETY_VERSION', '0.2.0' );
 define( 'STAGING_SAFETY_FILE', __FILE__ );
 define( 'STAGING_SAFETY_DIR', plugin_dir_path( __FILE__ ) );
 define( 'STAGING_SAFETY_URL', plugin_dir_url( __FILE__ ) );

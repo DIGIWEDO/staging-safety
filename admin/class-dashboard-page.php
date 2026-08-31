@@ -81,9 +81,20 @@ class Dashboard_Page {
 				?>
 			</p>
 
-			<?php if ( ! $is_staging ) : ?>
-				<p><?php esc_html_e( 'Zet deze regel in wp-config.php van de stagingserver om de plugin aan te zetten:', 'staging-safety' ); ?></p>
-				<p><code>define( 'STAGING_SAFETY_ENV', 'staging' );</code></p>
+			<?php if ( ! $is_staging && ! Environment::is_locked_to_production() ) : ?>
+				<p>
+					<a class="button button-primary" href="<?php echo esc_url( Admin::env_url( 'confirm_staging' ) ); ?>">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s: domeinnaam */
+								__( 'Ja, %s is een stagingomgeving', 'staging-safety' ),
+								Environment::current_host()
+							)
+						);
+						?>
+					</a>
+				</p>
 			<?php endif; ?>
 
 			<table class="ss-modes">

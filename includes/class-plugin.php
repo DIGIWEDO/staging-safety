@@ -71,6 +71,7 @@ class Plugin {
 		add_action( Logger::CLEANUP_HOOK, array( 'StagingSafety\\Logger', 'cleanup' ) );
 		add_action( 'admin_post_staging_safety_pause', array( $this, 'handle_pause' ) );
 
+		( new Updater() )->register();
 		( new Indicator() )->register();
 
 		if ( is_admin() ) {

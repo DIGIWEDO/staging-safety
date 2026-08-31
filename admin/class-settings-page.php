@@ -498,12 +498,51 @@ class Settings_Page {
 						);
 						?>
 					</p>
-					<?php if ( ! Environment::is_staging() ) : ?>
-						<p><?php esc_html_e( 'Zet deze regel in wp-config.php van de stagingserver:', 'staging-safety' ); ?></p>
-						<p><code>define( 'STAGING_SAFETY_ENV', 'staging' );</code></p>
+
+					<?php if ( Environment::is_locked_to_production() ) : ?>
+						<p class="description">
+							<?php
+							echo wp_kses(
+								__( 'WordPress meldt dat dit productie is, dus de knop hieronder is uitgeschakeld. Is dit tóch een stagingkopie, zet dan <code>define( \'STAGING_SAFETY_ENV\', \'staging\' );</code> in wp-config.php.', 'staging-safety' ),
+								array( 'code' => array() )
+							);
+							?>
+						</p>
+					<?php elseif ( '' !== Environment::confirmed_host() ) : ?>
+						<p>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %s: domeinnaam */
+									__( 'Bevestigd als staging op %s.', 'staging-safety' ),
+									Environment::confirmed_host()
+								)
+							);
+							?>
+						</p>
+						<p>
+							<a class="button" href="<?php echo esc_url( Admin::env_url( 'revoke_staging' ) ); ?>">
+								<?php esc_html_e( 'Bevestiging intrekken', 'staging-safety' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p>
+							<a class="button button-primary" href="<?php echo esc_url( Admin::env_url( 'confirm_staging' ) ); ?>">
+								<?php
+								echo esc_html(
+									sprintf(
+										/* translators: %s: domeinnaam */
+										__( 'Ja, %s is een stagingomgeving', 'staging-safety' ),
+										Environment::current_host()
+									)
+								);
+								?>
+							</a>
+						</p>
 					<?php endif; ?>
+
 					<p class="description">
-						<?php esc_html_e( 'Dit staat bewust niet in de instellingen maar in wp-config.php. Een instelling zit in de database, en die wordt tussen staging en productie heen en weer gekopieerd — dan blokkeert de plugin op de verkeerde plek, of juist nergens meer.', 'staging-safety' ); ?>
+						<?php esc_html_e( 'De bevestiging wordt vastgezet op dit domein. Komt deze database op een ander domein terecht, dan zet de plugin zichzelf uit — zo kan een stagingdatabase nooit de live-site blokkeren. Wil je het ook een verse kopie van productie laten overleven, gebruik dan de regel in wp-config.php.', 'staging-safety' ); ?>
 					</p>
 				</td>
 			</tr>
@@ -526,6 +565,76 @@ class Settings_Page {
 			<tr>
 				<th scope="row"><label for="ss-color"><?php esc_html_e( 'Kleur', 'staging-safety' ); ?></label></th>
 				<td><input type="color" id="ss-color" name="ss[indicator][color]" value="<?php echo esc_attr( $indicator['color'] ?? '#d63638' ); ?>"></td>
+			</tr>
+		</table>
+
+		<h2><?php esc_html_e( 'Updates', 'staging-safety' ); ?></h2>
+		<?php
+		$updates = (array) Settings::get( 'updates', array() );
+		$updater = new \StagingSafety\Updater();
+		$repo    = $updater->repo();
+		$release = $repo ? $updater->release() : null;
+		?>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Bijwerken via GitHub', 'staging-safety' ); ?></th>
+				<td>
+					<label>
+						<input type="checkbox" name="ss[updates][enabled]" value="1" <?php checked( ! empty( $updates['enabled'] ) ); ?>>
+						<?php esc_html_e( 'Meldingen tonen als er een nieuwe versie is', 'staging-safety' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'De update verschijnt dan gewoon op de pluginpagina, net als bij elke andere plugin.', 'staging-safety' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="ss-repo"><?php esc_html_e( 'Repository', 'staging-safety' ); ?></label></th>
+				<td>
+					<?php if ( defined( 'STAGING_SAFETY_GITHUB_REPO' ) ) : ?>
+						<p><code><?php echo esc_html( (string) constant( 'STAGING_SAFETY_GITHUB_REPO' ) ); ?></code></p>
+						<p class="description"><?php esc_html_e( 'Vastgezet in wp-config.php, dus hier niet aan te passen.', 'staging-safety' ); ?></p>
+					<?php else : ?>
+						<input type="text" id="ss-repo" name="ss[updates][repo]" class="regular-text code"
+							   placeholder="eigenaar/staging-safety"
+							   value="<?php echo esc_attr( $updates['repo'] ?? '' ); ?>">
+						<p class="description"><?php esc_html_e( 'Bijvoorbeeld doubleweb/staging-safety. De hele GitHub-URL plakken mag ook.', 'staging-safety' ); ?></p>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Status', 'staging-safety' ); ?></th>
+				<td>
+					<?php if ( ! $repo ) : ?>
+						<p class="ss-muted"><?php esc_html_e( 'Nog geen repository ingesteld — er wordt niet naar updates gekeken.', 'staging-safety' ); ?></p>
+					<?php elseif ( ! $release ) : ?>
+						<p class="ss-muted"><?php esc_html_e( 'Geen release gevonden. Staat er al een release in de repository, en is hij openbaar? Bij een besloten repository is een token nodig in wp-config.php.', 'staging-safety' ); ?></p>
+					<?php else : ?>
+						<p>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: 1: laatste versie, 2: geinstalleerde versie */
+									__( 'Laatste release: %1$s. Geïnstalleerd: %2$s.', 'staging-safety' ),
+									$release['version'],
+									STAGING_SAFETY_VERSION
+								)
+							);
+							?>
+							<?php if ( version_compare( $release['version'], STAGING_SAFETY_VERSION, '>' ) ) : ?>
+								<a href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>"><?php esc_html_e( 'Naar de pluginpagina om bij te werken', 'staging-safety' ); ?></a>
+							<?php endif; ?>
+						</p>
+					<?php endif; ?>
+					<?php if ( $repo ) : ?>
+						<p>
+							<a class="button" href="<?php echo esc_url( Admin::check_update_url() ); ?>">
+								<?php esc_html_e( 'Nu bij GitHub kijken', 'staging-safety' ); ?>
+							</a>
+						</p>
+					<?php endif; ?>
+					<p class="description">
+						<?php esc_html_e( 'Uit zichzelf wordt er hoogstens een paar keer per dag gekeken; het antwoord wordt zes uur bewaard.', 'staging-safety' ); ?>
+					</p>
+				</td>
 			</tr>
 		</table>
 

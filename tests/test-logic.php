@@ -38,13 +38,33 @@ ok( 'niets in wp-config: onbekend', Environment::type(), Environment::UNKNOWN );
 ok( 'onbekend blokkeert niet', Environment::is_staging(), false );
 ok( 'hostnaam-hint blijft een hint', Environment::looks_like_staging(), true );
 
-// Een vinkje in de database mag de omgeving niet meer bepalen: dat reisde mee
-// met een databasekopie tussen staging en productie.
-$GLOBALS['ss_options'][ Settings::OPTION ] = array( 'confirmed_staging' => true );
+// De knop in de beheeromgeving, vastgezet op het domein waarop hij is ingedrukt.
+Environment::confirm();
+ok( 'bevestiging zet hem aan', Environment::is_staging(), true );
+ok( 'domein wordt opgeslagen', Environment::confirmed_host(), 'staging.klant.nl' );
+
+// Het gevaarlijke geval: deze database belandt op de live-site.
+$GLOBALS['ss_host'] = 'mthekwerken.nl';
 Environment::reset();
-Settings::flush();
-ok( 'instelling in database telt niet mee', Environment::type(), Environment::UNKNOWN );
+ok( 'database op ander domein: uit', Environment::is_staging(), false );
+ok( 'en dat wordt gemeld', Environment::stale_confirmation(), 'staging.klant.nl' );
+
+// Terug op het eigen domein doet hij het weer.
+$GLOBALS['ss_host'] = 'staging.klant.nl';
+Environment::reset();
+ok( 'terug op eigen domein: weer aan', Environment::is_staging(), true );
+
+Environment::revoke();
+ok( 'intrekken zet hem uit', Environment::is_staging(), false );
+
+// De regel in wp-config wint van alles.
+set_env( 'production' );
+Environment::confirm();
+ok( 'knop overruled productie niet', Environment::is_staging(), false );
+Environment::revoke();
+set_env( '' );
 $GLOBALS['ss_options'] = array();
+Settings::flush();
 
 set_env( 'staging' );
 ok( 'wp-config staging', Environment::is_staging(), true );
@@ -153,6 +173,52 @@ ok( 'meekijken verstuurt gewoon', $m->intercept( null, $atts ), null );
 ok( 'risicovolle hook herkend', Cron_Guard::is_risky( 'action_scheduler_run_queue' ), true );
 ok( 'sync-hook herkend', Cron_Guard::is_risky( 'mijnplugin_daily_sync' ), true );
 ok( 'onschuldige hook', Cron_Guard::is_risky( 'wp_scheduled_delete' ), false );
+
+/* ---------- Updater ---------- */
+$u = new StagingSafety\Updater();
+
+function set_updates( $repo, $enabled = true ) {
+	Settings::flush();
+	$GLOBALS['ss_options'][ Settings::OPTION ] = array(
+		'updates' => array( 'enabled' => $enabled, 'repo' => $repo ),
+	);
+}
+
+set_updates( 'doubleweb/staging-safety' );
+ok( 'repo eenvoudig', $u->repo(), 'doubleweb/staging-safety' );
+
+set_updates( 'https://github.com/doubleweb/staging-safety' );
+ok( 'hele url geplakt', $u->repo(), 'doubleweb/staging-safety' );
+
+set_updates( 'https://github.com/doubleweb/staging-safety.git' );
+ok( 'url met .git', $u->repo(), 'doubleweb/staging-safety' );
+
+set_updates( 'zomaar wat' );
+ok( 'onzin geeft niets', $u->repo(), '' );
+
+set_updates( 'doubleweb/staging-safety', false );
+ok( 'uitgezet geeft niets', $u->repo(), '' );
+
+ok( 'tag met v', $u->normalise_version( 'v0.2.0' ), '0.2.0' );
+ok( 'tag zonder v', $u->normalise_version( '1.4.2' ), '1.4.2' );
+
+ok(
+	'eigen zip heeft voorrang',
+	$u->package_url( array(
+		'zipball_url' => 'https://api.github.com/zip',
+		'assets'      => array(
+			array( 'name' => 'notities.txt', 'browser_download_url' => 'https://x/notities.txt' ),
+			array( 'name' => 'staging-safety.zip', 'browser_download_url' => 'https://x/staging-safety.zip' ),
+		),
+	) ),
+	'https://x/staging-safety.zip'
+);
+
+ok(
+	'zonder zip terugvallen op bronarchief',
+	$u->package_url( array( 'zipball_url' => 'https://api.github.com/zip', 'assets' => array() ) ),
+	'https://api.github.com/zip'
+);
 
 /* ---------- Uitkomst ---------- */
 echo "\n{$GLOBALS['ss_pass']} geslaagd, {$GLOBALS['ss_fail']} gefaald\n";

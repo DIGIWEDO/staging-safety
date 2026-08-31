@@ -13,9 +13,18 @@ defined( 'ABSPATH' ) || exit;
  * De hele plugin hangt aan deze vraag: mogen we blokkeren of niet.
  *
  * Fout-positief is hier gevaarlijk. Als we productie voor staging aanzien
- * blokkeren we echte betalingen. Daarom staat het antwoord uitsluitend in
- * wp-config.php en nooit in de database: een databasekopie van productie
- * reist mee naar staging en andersom, wp-config.php niet.
+ * blokkeren we echte betalingen.
+ *
+ * Er zijn twee manieren om het antwoord te geven:
+ *
+ *  1. een regel in wp-config.php — die staat per server en overleeft dus een
+ *     verse databasekopie van productie;
+ *  2. een knop in de beheeromgeving — daarbij slaan we het domein op waarop
+ *     je hem indrukte. Belandt die database op een ander domein, dan klopt het
+ *     domein niet meer en zet de plugin zichzelf uit.
+ *
+ * Die tweede manier is net zo veilig tegen het gevaarlijke geval (een
+ * stagingdatabase die op productie terechtkomt), zonder dat je in de code hoeft.
  */
 class Environment {
 
@@ -78,7 +87,29 @@ class Environment {
 			return self::$type;
 		}
 
-		self::$source = __( 'niets — er staat geen omgeving in wp-config.php', 'staging-safety' );
+		// 3. De knop in de beheeromgeving, maar alleen op het domein waarop
+		// hij is ingedrukt.
+		$confirmed = self::confirmed_host();
+
+		if ( '' !== $confirmed ) {
+			if ( $confirmed === self::current_host() ) {
+				self::$source = __( 'de bevestiging in de beheeromgeving', 'staging-safety' );
+				self::$type   = self::STAGING;
+
+				return self::$type;
+			}
+
+			self::$source = sprintf(
+				/* translators: %s: domeinnaam */
+				__( 'niets — de bevestiging hoort bij %s, dus deze database komt van een andere omgeving', 'staging-safety' ),
+				$confirmed
+			);
+			self::$type = self::UNKNOWN;
+
+			return self::$type;
+		}
+
+		self::$source = __( 'niets — de omgeving is nog niet vastgesteld', 'staging-safety' );
 		self::$type   = self::UNKNOWN;
 
 		return self::$type;
@@ -97,6 +128,54 @@ class Environment {
 		$env = getenv( 'WP_ENVIRONMENT_TYPE' );
 
 		return $env ? strtolower( $env ) : null;
+	}
+
+	/**
+	 * Het domein waarop iemand de bevestigingsknop indrukte.
+	 *
+	 * @return string
+	 */
+	public static function confirmed_host() {
+		return strtolower( trim( (string) Settings::get( 'confirmed_staging', '' ) ) );
+	}
+
+	/**
+	 * Het domein waarop de site nu draait.
+	 *
+	 * @return string
+	 */
+	public static function current_host() {
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		return $host ? strtolower( $host ) : '';
+	}
+
+	/**
+	 * Er is wel bevestigd, maar op een ander domein. Dat betekent bijna altijd
+	 * dat deze database elders vandaan is gekopieerd.
+	 *
+	 * @return string Het domein van de bevestiging, of leeg.
+	 */
+	public static function stale_confirmation() {
+		$confirmed = self::confirmed_host();
+
+		return ( '' !== $confirmed && $confirmed !== self::current_host() ) ? $confirmed : '';
+	}
+
+	/**
+	 * Deze site als staging bevestigen, vastgezet op het huidige domein.
+	 */
+	public static function confirm() {
+		Settings::set( 'confirmed_staging', self::current_host() );
+		self::reset();
+	}
+
+	/**
+	 * Bevestiging weer intrekken.
+	 */
+	public static function revoke() {
+		Settings::set( 'confirmed_staging', '' );
+		self::reset();
 	}
 
 	/**

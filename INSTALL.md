@@ -3,28 +3,36 @@
 ## Neerzetten op een klantsite
 
 1. Map `staging-safety` in `wp-content/plugins/`, activeren.
-2. In `wp-config.php` van de **stagingserver**:
+2. Klik in het overzicht op **"Ja, dit is een stagingomgeving"**. Klaar.
 
-   ```php
-   define( 'STAGING_SAFETY_ENV', 'staging' );
-   ```
+Zonder die bevestiging doet de plugin niets.
 
-   Dat is de hele instelling. Staat die regel er niet, dan doet de plugin niets.
+### Waarom een knop en niet gewoon een vinkje
 
-Waarom in wp-config en niet als vinkje in de admin: een instelling zit in de
-database, en die wordt tussen staging en productie heen en weer gekopieerd.
-Zet je het vinkje op staging en trekt iemand die database naar productie, dan
-blokkeert de plugin daar echte betalingen. Andersom: trekt de klant een verse
-kopie van productie naar staging, dan is het vinkje weg en staat staging weer
-open. `wp-config.php` blijft per server staan en heeft dat probleem niet.
+De bevestiging wordt vastgezet op het domein waarop je hem indrukt. Dat lost
+het enige echt gevaarlijke scenario op: iemand kopieert de stagingdatabase naar
+productie. Het opgeslagen domein klopt daar niet meer, dus de plugin zet
+zichzelf uit en meldt in de admin dat deze database van elders komt. Zonder die
+koppeling aan het domein zou hij op de live-shop Mollie gaan blokkeren.
+
+### Wanneer tóch de regel in wp-config
+
+```php
+define( 'STAGING_SAFETY_ENV', 'staging' );
+```
+
+De knop zit in de database. Trekt de klant een verse kopie van productie naar
+staging, dan is de bevestiging weg en staat staging weer open — je ziet dat
+wel meteen aan de gele melding, maar je moet er dan aan denken. De regel in
+`wp-config.php` staat per server en heeft dat probleem niet. Op sites waar
+regelmatig ververst wordt is die dus prettiger.
 
 Heeft de host al `WP_ENVIRONMENT_TYPE` op `staging`, `development` of `local`
-staan (WP Engine, Kinsta en Pantheon doen dat), dan is dat genoeg en hoef je
-niets toe te voegen.
+staan (WP Engine, Kinsta en Pantheon doen dat), dan is er helemaal niets nodig.
 
 Staat er `WP_ENVIRONMENT_TYPE` op `production` — vaak omdat wp-config van
-productie is meegekopieerd — dan blokkeert de plugin niets tenzij je
-`STAGING_SAFETY_ENV` erbij zet. Die wint altijd.
+productie is meegekopieerd — dan is de knop uitgeschakeld en werkt alleen
+`STAGING_SAFETY_ENV`. Die wint altijd.
 
 ## Werkwijze op een nieuwe site
 
@@ -74,6 +82,45 @@ wp cron event run --due-now
 # Wat denkt de plugin dat dit is, en waarom
 wp eval 'var_dump( StagingSafety\Environment::type(), StagingSafety\Environment::source() );'
 ```
+
+## Updates uitrollen naar alle sites
+
+De plugin kijkt naar de laatste **release** van een GitHub-repository en
+vergelijkt de tag met het versienummer in de header. Is de tag hoger, dan
+verschijnt op elke site gewoon de normale updatemelding op de pluginpagina.
+
+Instellen per site: **Staging Safety → Instellingen → Algemeen → Updates**,
+vul daar `eigenaar/staging-safety` in. Of vastzetten op de server:
+
+```php
+define( 'STAGING_SAFETY_GITHUB_REPO', 'eigenaar/staging-safety' );
+```
+
+Is de repository besloten, dan is er ook een token nodig. Die hoort niet in de
+database, dus alleen in `wp-config.php`:
+
+```php
+define( 'STAGING_SAFETY_GITHUB_TOKEN', 'ghp_...' );
+```
+
+### Een nieuwe versie uitbrengen
+
+```bash
+# 1. versienummer ophogen in staging-safety.php (twee plekken) en readme.txt
+# 2. zip bouwen
+bin/build.sh
+
+# 3. taggen en releasen
+git tag v0.3.0 && git push origin v0.3.0
+gh release create v0.3.0 dist/staging-safety.zip --notes "Wat er veranderd is"
+```
+
+Hang die zip er altijd aan. Zonder eigen zip valt de plugin terug op het
+bronarchief van GitHub, en dat pakt uit naar een map met de tagnaam erin. We
+hernoemen die wel, maar een eigen zip is netter en sneller.
+
+De sites kijken hoogstens een paar keer per dag en bewaren het antwoord zes
+uur. Wil je het meteen zien: **Instellingen → Algemeen → Nu bij GitHub kijken**.
 
 ## Beperkingen
 

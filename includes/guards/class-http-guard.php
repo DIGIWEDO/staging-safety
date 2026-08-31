@@ -54,6 +54,12 @@ class Http_Guard extends Guard {
 			return $preempt;
 		}
 
+		// Onze eigen updatecontrole moet er altijd langs kunnen, anders kun je
+		// de plugin niet meer bijwerken zodra hij alles dichtzet.
+		if ( ! empty( $args['staging_safety_internal'] ) ) {
+			return $preempt;
+		}
+
 		$host = Matcher::host_from_url( $url );
 		if ( '' === $host ) {
 			return $preempt;

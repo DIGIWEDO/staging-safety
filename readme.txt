@@ -4,7 +4,7 @@ Tags: staging, veiligheid, http, e-mail, cron
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -32,10 +32,14 @@ en een pauzeknop die vanzelf afloopt.
 
 = Veiligheid voorop =
 
-De plugin doet niets tenzij er in `wp-config.php` staat dat dit staging is.
-Niet in een instelling, want de database wordt tussen staging en productie heen
-en weer gekopieerd — `wp-config.php` niet. Zo kan de plugin niet per ongeluk
-een productiesite platleggen, en verdwijnt hij ook niet bij een nieuwe kopie.
+De plugin doet niets tot je bevestigt dat dit staging is. Dat kan met een knop
+in de beheeromgeving: de bevestiging wordt vastgezet op het domein waarop je
+hem indrukt. Belandt die database later op de live-site, dan klopt het domein
+niet meer en zet de plugin zichzelf uit. Zo kan hij nooit per ongeluk een
+productiesite platleggen.
+
+Wil je dat het ook een verse databasekopie van productie overleeft, zet dan
+`define( 'STAGING_SAFETY_ENV', 'staging' );` in wp-config.php. Die wint altijd.
 
 = Wat de plugin niet ziet =
 
@@ -48,12 +52,9 @@ automatisch dat er niets naar buiten gaat.
 == Installatie ==
 
 1. Zet de map `staging-safety` in `wp-content/plugins/` en activeer de plugin.
-2. Zet in `wp-config.php` van de stagingserver:
-
-       define( 'STAGING_SAFETY_ENV', 'staging' );
-
-   Zonder die regel doet de plugin niets. Staat er al een
-   `WP_ENVIRONMENT_TYPE` op staging of development, dan is dat ook goed.
+2. Klik in het overzicht op "Ja, dit is een stagingomgeving". Zonder die
+   bevestiging doet de plugin niets. Staat er al een `WP_ENVIRONMENT_TYPE` op
+   staging of development, of de constant hierboven, dan is de knop niet nodig.
 3. Zet de onderdelen eerst een paar dagen op "meekijken".
 4. Kijk in het logboek wat de site nodig heeft, zet die hosts op de witte lijst
    en schakel daarna over naar "blokkeren".
@@ -76,6 +77,12 @@ loopt een bestelling of formulier vast op een verzendfout. In het logboek zie je
 dat de mail is tegengehouden.
 
 == Changelog ==
+
+= 0.2.0 =
+* Bevestigen dat een site staging is kan nu met een knop, vastgezet op het
+  domein. Landt de database op een ander domein, dan zet de plugin zichzelf uit.
+* Updates via GitHub Releases: nieuwe versies verschijnen gewoon op de
+  pluginpagina.
 
 = 0.1.0 =
 * Eerste interne versie.
